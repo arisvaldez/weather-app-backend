@@ -8,7 +8,9 @@ class Search {
   }
 
   async city(name) {
-    console.log(name);
+   const response = await axios.get('https://reqres.in/api/users/2');
+   console.log(response.data
+    )
 
     return [];
   }
