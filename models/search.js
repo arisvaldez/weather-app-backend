@@ -1,18 +1,19 @@
+require('dotenv').config();
 const axios = require('axios');
 
 class Search {
-  history = ['otawa', 'santiago', 'washintong'];
-  languaje = 'es';
-  limit = 5;
-  base_url = '';
+  _history = ['otawa', 'santiago', 'washintong'];
 
   get paramsMapBox() {
     return {
-      access_token:
-        'pk.eyJ1IjoiYXJpc3ZhbGRleiIsImEiOiJja3NlMGpsNDAwdnV1Mm9xa2Z4dmp3YXRuIn0.LuHeuk02dA_qHZ0D3lZY-g',
+      access_token: process.env.MABBOX_KEY,
       language: 'es',
       limit: 5,
     };
+  }
+
+  get history() {
+    return _history;
   }
 
   constructor() {
@@ -27,8 +28,13 @@ class Search {
       });
 
       const response = await instace.get();
-      console.log(response.data);
-      return [];
+
+      return response.data.features.map((place) => ({
+        id: place.id,
+        name: place.place_name,
+        lng: place.center[0],
+        lat: place.center[1],
+      }));
     } catch (ex) {
       console.log(ex);
       return [];
