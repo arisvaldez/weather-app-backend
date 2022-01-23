@@ -1,8 +1,10 @@
-require('dotenv').config();
+const fs = require('fs');
 const axios = require('axios');
+require('dotenv').config();
 
 class Search {
-  _history = ['otawa', 'santiago', 'washintong'];
+  _history = [];
+  _dbPath = './db/database.json';
 
   get paramsMapBox() {
     return {
@@ -11,13 +13,20 @@ class Search {
       limit: 5,
     };
   }
+  get paramsOpenWeather() {
+    return {
+      appid: process.env.OPENWEATHER_KEY,
+      units: 'metric',
+      lang: 'es',
+    };
+  }
 
   get history() {
     return _history;
   }
 
   constructor() {
-    //TODO: leerdb
+    this.loadData();
   }
 
   async city(name) {
@@ -39,6 +48,55 @@ class Search {
       console.log(ex);
       return [];
     }
+  }
+
+  async getWeather(lat, lon) {
+    try {
+      const instace = axios.create({
+        baseURL: `https://api.openweathermap.org/data/2.5/weather`,
+        params: { ...this.paramsOpenWeather, lat, lon },
+      });
+
+      const response = await instace.get();
+      const { weather, main } = response.data;
+
+      return {
+        description: weather[0].description,
+        minimun: main.temp_min,
+        maximun: main.temp_max,
+        temperature: main.temp,
+      };
+    } catch (ex) {
+      console.log(ex);
+    }
+  }
+
+  addToHistory(place = '') {
+    if (!this._history.includes(place.toLocaleLowerCase()))
+      this._history.unshift(place.toLocaleLowerCase());
+
+    this.persistData();
+  }
+
+  persistData() {
+    const payload = {
+      history: this._history,
+    };
+    fs.writeFileSync(this._dbPath, JSON.stringify(payload));
+  }
+
+  loadData() {
+    if (!fs.existsSync(this._dbPath)) return;
+    const rawData = fs.readFileSync(this._dbPath, { encoding: 'utf-8' });
+    const parsedData = JSON.parse(rawData);
+    this._history = parsedData.history;
+  }
+
+  displayHistory() {
+    this._history.forEach((place, index) => {
+      const idx = `${index + 1}`.green;
+      console.log(`${idx}.- ${place}`);
+    });
   }
 }
 
